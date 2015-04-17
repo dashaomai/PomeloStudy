@@ -1,0 +1,10 @@
+{
+    "name":"zmqrpc-test",
+    "version":"0.0.1",
+    "private":false,
+    "dependencies":{
+        "pomelo":"1.1.6",
+        "pomelo-rpc-zeromq":"*"
+    }
+}
+
