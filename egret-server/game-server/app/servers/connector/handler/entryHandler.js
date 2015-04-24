@@ -1,9 +1,12 @@
+var pomelo = require('pomelo');
+
 module.exports = function(app) {
   return new Handler(app);
 };
 
 var Handler = function(app) {
   this.app = app;
+  this.channelService = app.get('channelService');
 };
 
 /**
@@ -15,7 +18,40 @@ var Handler = function(app) {
  * @return {Void}
  */
 Handler.prototype.entry = function(msg, session, next) {
-  next(null, {code: 200, msg: 'game server is ok.'});
+  var uid = 1000;
+  var self = this;
+
+  var sessionService = this.app.get('sessionService');
+  var loggedSessions = sessionService.getByUid(uid);
+  if (!!loggedSessions && !!loggedSessions.length) {
+    sessionService.kick(uid);
+  }
+
+  session.bind(uid, function(err) {
+    if (!!err) {
+      console.error(err);
+      next(err);
+    } else {
+
+      session.on('closed', onUserLeave.bind(null, self.app));
+      session.pushAll();
+
+      var channel = self.channelService.getChannel('onlineChannel', true);
+      channel.add(uid, session.frontendId, function(err) {
+        if (!!err) {
+          console.error(err);
+          next(err);
+        } else {
+        }
+      });
+
+      setTimeout(function() {
+        channel.pushMessage({route: 'onHi', msg: 'hi, egret!'});
+      }, 1000);
+
+      next(null, {code: 200, msg: 'game server is ok.'});
+    }
+  });
 };
 
 /**
@@ -49,3 +85,7 @@ Handler.prototype.subscribe = function(msg, session, next) {
 	};
   next(null, result);
 };
+
+function onUserLeave(app, session) {
+  // nothing;
+}
